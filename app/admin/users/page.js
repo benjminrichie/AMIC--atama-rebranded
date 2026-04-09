@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/context/AuthContext';
 import { AdminSidebar } from '@/lib/components/AdminSidebar';
+import { Menu } from 'lucide-react';
 
 export default function UsersPage() {
   const { admin, token } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
@@ -131,14 +133,22 @@ export default function UsersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <AdminSidebar />
+      <AdminSidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
       {/* Main Content */}
-      <div className="ml-64 flex-1 flex flex-col transition-all duration-300">
+      <div className="md:ml-64 flex-1 flex flex-col transition-all duration-300">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="px-8 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Manage Users</h1>
+          <div className="px-4 md:px-8 py-3 md:py-4 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Menu size={24} className="text-gray-900" />
+              </button>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">Manage Users</h1>
+            </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">Welcome, {admin?.name}</span>
             </div>
@@ -146,7 +156,7 @@ export default function UsersPage() {
         </header>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-4 md:p-8">
           {/* Toast Notification */}
           {toast && (
             <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg text-white ${
@@ -156,10 +166,10 @@ export default function UsersPage() {
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            {/* Users Table */}
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 overflow-hidden">
+            {/* Users Table - Mobile responsive */}
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-sm md:text-base">
                 <thead className="border-b border-gray-200 bg-gray-50">
                   <tr>
                     <th className="text-left py-3 px-4 font-medium text-gray-700">Name</th>
@@ -215,9 +225,9 @@ export default function UsersPage() {
             </div>
 
             {/* Add User Section */}
-            <div className="mt-8 border-t pt-8">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Add New User</h2>
-              <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl">
+            <div className="mt-6 md:mt-8 border-t pt-6 md:pt-8">
+              <h2 className="text-base md:text-lg font-bold text-gray-900 mb-4">Add New User</h2>
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 max-w-2xl">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
                   <input
@@ -270,7 +280,7 @@ export default function UsersPage() {
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="md:col-span-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 rounded-lg transition-colors"
                 >
                   {formLoading ? 'Creating User...' : 'Add User'}
                 </button>

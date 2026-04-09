@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, X, Trash2, Edit2, Plus } from 'lucide-react';
+import { Save, X, Trash2, Edit2, Plus, Menu } from 'lucide-react';
 import { useAuth } from '@/lib/context/AuthContext';
 import { AdminSidebar } from '@/lib/components/AdminSidebar';
 import toast from 'react-hot-toast';
 
 export default function ContentManagement() {
   const { admin, token } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('health');
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -174,14 +175,22 @@ export default function ContentManagement() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <AdminSidebar />
+      <AdminSidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
       {/* Main Content */}
-      <div className="ml-64 flex-1 flex flex-col transition-all duration-300">
+      <div className="md:ml-64 flex-1 flex flex-col transition-all duration-300">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="px-8 py-4 flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Content Management</h1>
+          <div className="px-4 md:px-8 py-3 md:py-4 flex justify-between items-center">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <Menu size={24} className="text-gray-900" />
+              </button>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900">Content Management</h1>
+            </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-600">Welcome, {admin?.name}</span>
             </div>
@@ -189,7 +198,7 @@ export default function ContentManagement() {
         </header>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-4 md:p-8">
           <div className="bg-white rounded-lg shadow-lg">
             {/* Tabs */}
             <div className="flex border-b overflow-x-auto">
@@ -197,7 +206,7 @@ export default function ContentManagement() {
                 <button
                   key={section.id}
                   onClick={() => setActiveTab(section.id)}
-                  className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors whitespace-nowrap ${
+                  className={`flex items-center gap-2 px-3 md:px-6 py-3 md:py-4 text-sm md:text-base font-medium transition-colors whitespace-nowrap ${
                     activeTab === section.id
                       ? 'border-b-2 border-blue-900 text-blue-900 bg-blue-50'
                       : 'text-gray-600 hover:text-gray-900'
@@ -215,11 +224,10 @@ export default function ContentManagement() {
                 <div className="w-8 h-8 border-4 border-blue-900 border-t-transparent rounded-full animate-spin"></div>
               </div>
             ) : (
-              <div className="p-8 space-y-6">
-                {/* Edit/Add Form */}
+              <div className="p-4 md:p-8 space-y-6 overflow-x-hidden">{/* Edit/Add Form */}
                 {editingId !== null || showAddForm ? (
                   <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-                    <h3 className="text-lg font-bold text-gray-900 mb-6">
+                    <h3 className="text-base md:text-lg font-bold text-gray-900 mb-6">
                       {editingId !== null ? `Edit: ${formData.title}` : 'Add New Content'}
                     </h3>
                     <div className="space-y-4">
