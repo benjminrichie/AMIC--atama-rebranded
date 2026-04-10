@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/context/AuthContext';
@@ -8,8 +8,38 @@ import { AdminSidebar } from '@/lib/components/AdminSidebar';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { admin } = useAuth();
+  const { admin, token } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [totalUsers, setTotalUsers] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch total users on mount
+  useEffect(() => {
+    if (token) {
+      fetchTotalUsers();
+    }
+  }, [token]);
+
+  const fetchTotalUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/users', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (data.success && data.users) {
+        setTotalUsers(data.users.length);
+      }
+    } catch (error) {
+      console.error('Error fetching total users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!admin) {
     return null;
@@ -51,7 +81,7 @@ export default function AdminDashboard() {
 
             <div className="bg-white rounded-lg shadow p-6">
               <div className="text-gray-600 text-sm font-medium">Total Users</div>
-              <div className="text-3xl font-bold text-blue-900 mt-2">1</div>
+              <div className="text-3xl font-bold text-blue-900 mt-2">{loading ? '-' : totalUsers}</div>
               <div className="text-gray-500 text-xs mt-2">Admin users</div>
             </div>
 

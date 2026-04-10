@@ -132,11 +132,11 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50 flex overflow-hidden">
       <AdminSidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
       {/* Main Content */}
-      <div className="md:ml-64 flex-1 flex flex-col transition-all duration-300">
+      <div className="md:ml-64 flex-1 flex flex-col transition-all duration-300 overflow-hidden">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 shadow-sm">
           <div className="px-4 md:px-8 py-3 md:py-4 flex justify-between items-center">
@@ -156,7 +156,7 @@ export default function UsersPage() {
         </header>
 
         {/* Main Content Area */}
-        <div className="flex-1 overflow-auto p-4 md:p-8">
+        <div className="flex-1 overflow-auto p-4 md:p-8 w-full">
           {/* Toast Notification */}
           {toast && (
             <div className={`fixed top-4 right-4 px-4 py-3 rounded-lg text-white ${
@@ -166,9 +166,9 @@ export default function UsersPage() {
             </div>
           )}
 
-          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6 overflow-hidden">
+          <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
             {/* Users Table - Mobile responsive */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto -mx-4 md:-mx-6 px-4 md:px-6">
               <table className="w-full text-sm md:text-base">
                 <thead className="border-b border-gray-200 bg-gray-50">
                   <tr>
