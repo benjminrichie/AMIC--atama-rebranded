@@ -16,6 +16,7 @@ export function AdminSidebar({ mobileOpen, setMobileOpen }) {
     { id: 'dashboard', label: 'Dashboard', icon: '📊', path: '/admin/dashboard' },
     { id: 'content', label: 'Content Management', icon: '📝', path: '/admin/content' },
     { id: 'users', label: 'Users', icon: '👥', path: '/admin/users' },
+    { id: 'dues', label: 'Monthly Dues', icon: '📅', path: '/admin/dues' },
     { id: 'settings', label: 'Settings', icon: '⚙️', path: '/admin/settings' },
   ];
 

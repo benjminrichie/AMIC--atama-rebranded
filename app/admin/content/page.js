@@ -17,12 +17,30 @@ export default function ContentManagement() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [formData, setFormData] = useState({ title: '', description: '', icon: '' });
+  const [customSections, setCustomSections] = useState([]);
+  const [showAddTabModal, setShowAddTabModal] = useState(false);
+  const [newTabData, setNewTabData] = useState({ label: '', icon: '' });
+  const [customTabContent, setCustomTabContent] = useState({});
 
-  const sections = [
-    { id: 'health', label: 'Health', icon: '🏥' },
-    { id: 'agriculture', label: 'Agriculture', icon: '🌾' },
-    { id: 'marketing', label: 'Marketing', icon: '📱' },
+  const defaultSections = [
+    { id: 'health', label: 'Health', icon: '🏥', isDefault: true },
+    { id: 'agriculture', label: 'Agriculture', icon: '🌾', isDefault: true },
+    { id: 'marketing', label: 'Marketing', icon: '📱', isDefault: true },
   ];
+
+  const sections = [...defaultSections, ...customSections];
+
+  useEffect(() => {
+    // Load custom sections from localStorage
+    const saved = localStorage.getItem('customSections');
+    const savedContent = localStorage.getItem('customTabContent');
+    if (saved) {
+      setCustomSections(JSON.parse(saved));
+    }
+    if (savedContent) {
+      setCustomTabContent(JSON.parse(savedContent));
+    }
+  }, []);
 
   useEffect(() => {
     loadContent();
@@ -32,14 +50,25 @@ export default function ContentManagement() {
     setLoading(true);
     setEditingId(null);
     setShowAddForm(false);
+    
+    // Check if it's a custom tab
+    const isCustomTab = !['health', 'agriculture', 'marketing'].includes(activeTab);
+    
     try {
-      const response = await fetch(`/api/content/${activeTab}`);
-      const data = await response.json();
-
-      if (data.success && data.data) {
-        setItems(data.data.sections || []);
+      if (isCustomTab) {
+        // Load from custom tab content
+        const content = customTabContent[activeTab] || [];
+        setItems(content);
       } else {
-        setItems([]);
+        // Load from API for default sections
+        const response = await fetch(`/api/content/${activeTab}`);
+        const data = await response.json();
+
+        if (data.success && data.data) {
+          setItems(data.data.sections || []);
+        } else {
+          setItems([]);
+        }
       }
     } catch (error) {
       toast.error('Failed to load content');
@@ -57,29 +86,44 @@ export default function ContentManagement() {
 
     setSaving(true);
     try {
-      const newItems = [...items, formData];
-      const response = await fetch(`/api/content/${activeTab}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: activeTab.charAt(0).toUpperCase() + activeTab.slice(1),
-          description: `${activeTab} content`,
-          sections: newItems,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
+      const isCustomTab = !['health', 'agriculture', 'marketing'].includes(activeTab);
+      
+      if (isCustomTab) {
+        // Save to custom tab content in localStorage
+        const newItems = [...items, formData];
+        const updated = { ...customTabContent, [activeTab]: newItems };
+        setCustomTabContent(updated);
+        localStorage.setItem('customTabContent', JSON.stringify(updated));
         setItems(newItems);
         setFormData({ title: '', description: '', icon: '' });
         setShowAddForm(false);
         toast.success('Content added successfully');
       } else {
-        toast.error(data.error || 'Failed to add content');
+        // Save to API for default sections
+        const newItems = [...items, formData];
+        const response = await fetch(`/api/content/${activeTab}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: activeTab.charAt(0).toUpperCase() + activeTab.slice(1),
+            description: `${activeTab} content`,
+            sections: newItems,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setItems(newItems);
+          setFormData({ title: '', description: '', icon: '' });
+          setShowAddForm(false);
+          toast.success('Content added successfully');
+        } else {
+          toast.error(data.error || 'Failed to add content');
+        }
       }
     } catch (error) {
       toast.error('Error adding content');
@@ -102,31 +146,47 @@ export default function ContentManagement() {
 
     setSaving(true);
     try {
-      const newItems = [...items];
-      newItems[editingId] = formData;
+      const isCustomTab = !['health', 'agriculture', 'marketing'].includes(activeTab);
       
-      const response = await fetch(`/api/content/${activeTab}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: activeTab.charAt(0).toUpperCase() + activeTab.slice(1),
-          description: `${activeTab} content`,
-          sections: newItems,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
+      if (isCustomTab) {
+        // Save to custom tab content in localStorage
+        const newItems = [...items];
+        newItems[editingId] = formData;
+        const updated = { ...customTabContent, [activeTab]: newItems };
+        setCustomTabContent(updated);
+        localStorage.setItem('customTabContent', JSON.stringify(updated));
         setItems(newItems);
         setEditingId(null);
         setFormData({ title: '', description: '', icon: '' });
         toast.success('Content updated successfully');
       } else {
-        toast.error(data.error || 'Failed to update content');
+        // Save to API for default sections
+        const newItems = [...items];
+        newItems[editingId] = formData;
+        
+        const response = await fetch(`/api/content/${activeTab}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: activeTab.charAt(0).toUpperCase() + activeTab.slice(1),
+            description: `${activeTab} content`,
+            sections: newItems,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setItems(newItems);
+          setEditingId(null);
+          setFormData({ title: '', description: '', icon: '' });
+          toast.success('Content updated successfully');
+        } else {
+          toast.error(data.error || 'Failed to update content');
+        }
       }
     } catch (error) {
       toast.error('Error updating content');
@@ -138,34 +198,97 @@ export default function ContentManagement() {
   const handleDeleteItem = async (index) => {
     setSaving(true);
     try {
-      const newItems = items.filter((_, i) => i !== index);
+      const isCustomTab = !['health', 'agriculture', 'marketing'].includes(activeTab);
       
-      const response = await fetch(`/api/content/${activeTab}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: activeTab.charAt(0).toUpperCase() + activeTab.slice(1),
-          description: `${activeTab} content`,
-          sections: newItems,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
+      if (isCustomTab) {
+        // Delete from custom tab content
+        const newItems = items.filter((_, i) => i !== index);
+        const updated = { ...customTabContent, [activeTab]: newItems };
+        setCustomTabContent(updated);
+        localStorage.setItem('customTabContent', JSON.stringify(updated));
         setItems(newItems);
         setShowDeleteConfirm(null);
         toast.success('Content deleted successfully');
       } else {
-        toast.error(data.error || 'Failed to delete content');
+        // Delete from API for default sections
+        const newItems = items.filter((_, i) => i !== index);
+        
+        const response = await fetch(`/api/content/${activeTab}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            title: activeTab.charAt(0).toUpperCase() + activeTab.slice(1),
+            description: `${activeTab} content`,
+            sections: newItems,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          setItems(newItems);
+          setShowDeleteConfirm(null);
+          toast.success('Content deleted successfully');
+        } else {
+          toast.error(data.error || 'Failed to delete content');
+        }
       }
     } catch (error) {
       toast.error('Error deleting content');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAddCustomTab = () => {
+    if (!newTabData.label) {
+      toast.error('Please enter a tab name');
+      return;
+    }
+
+    // Generate unique ID from label
+    const id = newTabData.label.toLowerCase().replace(/\s+/g, '-');
+    
+    // Check if ID already exists
+    if (sections.some(s => s.id === id)) {
+      toast.error('A tab with this name already exists');
+      return;
+    }
+
+    const newSection = {
+      id,
+      label: newTabData.label,
+      icon: newTabData.icon || '📄',
+      isDefault: false,
+    };
+
+    const updated = [...customSections, newSection];
+    setCustomSections(updated);
+    localStorage.setItem('customSections', JSON.stringify(updated));
+    setNewTabData({ label: '', icon: '' });
+    setShowAddTabModal(false);
+    toast.success('Tab created successfully');
+  };
+
+  const handleDeleteTab = (tabId) => {
+    if (confirm('Are you sure you want to delete this tab and all its content?')) {
+      const updated = customSections.filter(s => s.id !== tabId);
+      setCustomSections(updated);
+      localStorage.setItem('customSections', JSON.stringify(updated));
+      
+      // Also delete the content
+      const updatedContent = { ...customTabContent };
+      delete updatedContent[tabId];
+      setCustomTabContent(updatedContent);
+      localStorage.setItem('customTabContent', JSON.stringify(updatedContent));
+      
+      if (activeTab === tabId) {
+        setActiveTab('health');
+      }
+      toast.success('Tab deleted successfully');
     }
   };
 
@@ -203,19 +326,40 @@ export default function ContentManagement() {
             {/* Tabs */}
             <div className="flex border-b overflow-x-auto">
               {sections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveTab(section.id)}
-                  className={`flex items-center gap-2 px-3 md:px-6 py-3 md:py-4 text-sm md:text-base font-medium transition-colors whitespace-nowrap ${
-                    activeTab === section.id
-                      ? 'border-b-2 border-blue-900 text-blue-900 bg-blue-50'
-                      : 'text-gray-600 hover:text-gray-900'
-                  }`}
-                >
-                  <span>{section.icon}</span>
-                  {section.label}
-                </button>
+                <div key={section.id} className="relative group">
+                  <button
+                    onClick={() => setActiveTab(section.id)}
+                    className={`flex items-center gap-2 px-3 md:px-6 py-3 md:py-4 text-sm md:text-base font-medium transition-colors whitespace-nowrap ${
+                      activeTab === section.id
+                        ? 'border-b-2 border-blue-900 text-blue-900 bg-blue-50'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <span>{section.icon}</span>
+                    {section.label}
+                  </button>
+                  
+                  {/* Delete button for custom tabs */}
+                  {!section.isDefault && (
+                    <button
+                      onClick={() => handleDeleteTab(section.id)}
+                      className="absolute top-3 right-3 translate-x-1/2 -translate-y-1/2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete this tab"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               ))}
+              
+              {/* Add Tab Button */}
+              <button
+                onClick={() => setShowAddTabModal(true)}
+                className="flex items-center gap-2 px-3 md:px-6 py-3 md:py-4 text-sm md:text-base font-medium text-green-600 hover:text-green-700 hover:bg-green-50 transition-colors whitespace-nowrap border-l border-gray-200"
+              >
+                <Plus size={18} />
+                <span className="hidden md:inline">Add Tab</span>
+              </button>
             </div>
 
             {/* Content Area */}
@@ -377,6 +521,70 @@ export default function ContentManagement() {
                 className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
               >
                 {saving ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Tab Modal */}
+      {showAddTabModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-bold text-gray-900">Create New Tab</h3>
+              <button
+                onClick={() => setShowAddTabModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Tab Name *</label>
+                <input
+                  type="text"
+                  value={newTabData.label}
+                  onChange={(e) => setNewTabData({ ...newTabData, label: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 text-black"
+                  placeholder="e.g., Education, Technology"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Icon</label>
+                <input
+                  type="text"
+                  value={newTabData.icon}
+                  onChange={(e) => setNewTabData({ ...newTabData, icon: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 text-black"
+                  placeholder="Enter icon (emoji, e.g., 🎓)"
+                />
+                <p className="text-xs text-gray-500 mt-1">Leave blank for default 📄</p>
+              </div>
+
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-900">
+                  <strong>Preview:</strong> {newTabData.icon || '📄'} {newTabData.label || 'Tab Name'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => setShowAddTabModal(false)}
+                className="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 font-medium rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddCustomTab}
+                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Plus size={18} />
+                Create Tab
               </button>
             </div>
           </div>
